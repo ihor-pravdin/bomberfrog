@@ -1,40 +1,53 @@
 'use strict'
 
-const express = require('express');
-const app = express();
-const router = express.Router();
-const bodyParser = require('body-parser')
+// CONFIG
 
 const config = require('./config.js');
 
-const lists = [
-    {
-        name: "001",
-        description: "foo foo",
-        created_at: 1653604884125,
-        updated_at: null,
-        done: false
-    },
-    {
-        name: "002",
-        description: "bar bar",
-        created_at: 1653604884126,
-        updated_at: null,
-        done: false
-    }
-];
+// EXPRESS
+
+const express = require('express')
+const app = express()
+const router = express.Router()
+
+// MYSQL
+
+const mysql = require('mysql')
+const pool = mysql.createPool(config.mysql)
+
+// ROUTING
 
 router.get('/lists', (req, res) => {
-    res.json(lists);
-});
+    pool.query(`select * from lists limit 100`, (err, result) => {
+        if (err) throw err;
+        res.json(result)
+    })
+})
 
-router.all('*', (req, res) => {
-    res.status(404).send('Not found');
-});
+router.all('*', (_, res) => {
+    res.status(404).send('Not found')
+})
 
-app.use(bodyParser.json());
-app.use(router);
+app.use(express.json())
+app.use(router)
 
-app.listen(config.port, () => {
-    console.log(`BF API SERVER listening on port ${config.port}`)
-});
+// SERVER
+
+const server = app.listen(config.port, () => {
+    console.log(`APP SERVER started:`)
+    console.log(`> Port: ${config.port}`)
+})
+
+process.on('SIGINT', () => shutDown())
+process.on('SIGTERM', () => shutDown())
+
+function shutDown () {
+    console.log(`APP SERVER is closing:`)
+    server.close(err => {
+        console.log(`> HTTP SERVER ... closed`)
+        pool.end(() => {
+            console.log('> DB CONNECTION ... closed')
+            process.exit(err ? 1 : 0)
+        })
+    })
+}

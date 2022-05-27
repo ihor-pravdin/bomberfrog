@@ -1,0 +1,6 @@
+module.exports = {
+    LIST_NEW_STATUS: 0,
+    LIST_FINISHED_STATUS: 1,
+    LIST_PROCESSING_STATUS: 2,
+    LIST_FAILED_STATUS: 3
+}
