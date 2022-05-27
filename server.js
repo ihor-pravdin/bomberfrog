@@ -15,11 +15,19 @@ const express = require('express');
 const app = express();
 const router = express.Router();
 const {body, param, validationResult} = require('express-validator');
+require('express-async-errors');
 
 /*** MYSQL ***/
 
 const mysql = require('mysql');
+const {promisify} = require("es6-promisify");
 const pool = mysql.createPool(config.mysql);
+const getConnection = promisify(pool.getConnection.bind(pool));
+const query = promisify(pool.query.bind(pool));
+
+/*** WORKERS ***/
+
+const {Worker} = require("worker_threads");
 
 /*** EVENTS ***/
 
@@ -37,57 +45,85 @@ appEmitter.on(LIST_STATUS_CHANGED, payload => {
 
 app.use(express.json());
 
-// /lists
+// /lists/:limit?/:offset?
 
-router.route('/lists')
-    .get((req, res) => {
-        pool.query('select * from lists limit 100', (err, result) => {
-            if (err) throw err;
-            res.json(result);
+router.route('/lists/:limit?/:offset?')
+    .get(
+        param('limit').default(50).isInt({min: 1, max: 100}).toInt(),
+        param('offset').default(0).isInt({min: 0}).toInt(),
+        async (req, res) => {
+            const {params: {limit, offset}} = req;
+            const {errors} = validationResult(req);
+            if (errors.length > 0) {
+                res.status(400).json({error: errors});
+            } else {
+                const result = await query('select * from lists order by id desc limit ? offset ?;', [limit, offset]);
+                res.json(result);
+            }
         });
-    });
 
 // /list/:name
 
 router.route('/list/:name')
-    .get( //get list info
+    .get(
         param('name').isUUID('4'),
-        (req, res) => {
+        async (req, res, next) => {
+            const {params: {name}} = req;
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                return res.status(400).json({error: errors.array()});
+                res.status(400).json({error: errors.array()});
+            } else {
+                const [result] = await query('select * from lists where name = ?', [name]);
+                res.json(result);
             }
-            const {params: {name}} = req;
-            pool.query('select * from lists where name = ?',
-                [name],
-                (err, result) => {
-                    if (err) throw err;
-                    res.json(result[0]);
-                });
         })
-    .post( //change list status
+    .post(
         param('name').isUUID('4'),
         body('status').isInt().toInt().isIn(Object.values(statuses)),
-        (req, res) => {
+        async (req, res, next) => {
+            const {params: {name}, body: {status}} = req;
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-                return res.status(400).json({error: errors.array()});
+                res.status(400).json({error: errors.array()});
+            } else {
+                const conn = await getConnection();
+                try {
+                    await promisify(conn.beginTransaction.bind(conn))();
+                    await promisify(conn.query.bind(conn))('update lists set status = ?, updated_at = now() where name = ?', [status, name]);
+                    const [result] = await promisify(conn.query.bind(conn))('select * from lists where name = ?', [name]);
+                    appEmitter.emit(LIST_STATUS_CHANGED, result);
+                    await promisify(conn.commit.bind(conn))();
+                    res.json(result);
+                } catch (err) {
+                    if (conn) {
+                        await promisify(conn.rollback.bind(conn))();
+                    }
+                    next(err);
+                } finally {
+                    if (conn) {
+                        conn.release();
+                    }
+                }
             }
-            const {params: {name}, body: {status}} = req;
-            pool.query('update lists set status = ?, updated_at = now() where name = ?',
-                [status, name],
-                (err, _) => {
-                    if (err) throw err;
-                    appEmitter.emit(LIST_STATUS_CHANGED, {name, status});
-                    res.json({status});
-                });
         });
+
+app.use(router);
 
 // 404
 
-router.all('/*', (_, res) => res.status(404).json({error: 'Not found'}));
+app.use((req, res) => {
+    res.status(404).json({error: 'Not found'})
+});
 
-app.use(router);
+// default error handler
+
+app.use((err, req, res, next) => {
+    console.log(err);
+    if (res.headersSent) {
+        return next(err);
+    }
+    res.status(500).json({error: err.message || 'Unknown error'});
+});
 
 /*** SERVER ***/
 
