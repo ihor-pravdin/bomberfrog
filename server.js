@@ -3,6 +3,7 @@
 /*** CONSTANTS ***/
 
 const statuses = require('./constants/status.js');
+const {LIST_STATUS_CHANGED} = require('./constants/event.js');
 
 /*** CONFIG ***/
 
@@ -24,10 +25,13 @@ const pool = mysql.createPool(config.mysql);
 
 const EventEmitter = require('events');
 
-class AppEmitter extends EventEmitter {
-}
+class AppEmitter extends EventEmitter {}
 
 const appEmitter = new AppEmitter();
+
+appEmitter.on(LIST_STATUS_CHANGED, payload => {
+    console.log(LIST_STATUS_CHANGED, payload);
+});
 
 /*** ROUTING ***/
 
@@ -74,6 +78,7 @@ router.route('/list/:name')
                 [status, name],
                 (err, _) => {
                     if (err) throw err;
+                    appEmitter.emit(LIST_STATUS_CHANGED, {name, status});
                     res.json({status});
                 });
         });
