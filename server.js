@@ -2,12 +2,12 @@
 
 /*** CONSTANTS ***/
 
-const statuses = require('./constants/status.js');
-const {LIST_STATUS_CHANGED} = require('./constants/event.js');
+const statuses = require('./constants/status');
+const {LIST_STATUS_CHANGED} = require('./constants/event');
 
 /*** CONFIG ***/
 
-const config = require('./config.js');
+const config = require('./config');
 
 /*** EXPRESS ***/
 
@@ -27,13 +27,13 @@ const validationWrapper = fn => (req, res, next) => {
     return Promise.resolve(result).catch(next);
 };
 
-/*** MYSQL ***/
+/*** POOL ***/
 
-const mysql = require('mysql');
-const {promisify} = require("es6-promisify");
-const pool = mysql.createPool(config.mysql);
-const getConnection = promisify(pool.getConnection.bind(pool));
-const query = promisify(pool.query.bind(pool));
+const {pool} = require('./pool');
+
+/*** ACTIONS ***/
+
+const action = require('./actions');
 
 /*** WORKERS ***/
 
@@ -63,8 +63,8 @@ router.route('/lists/:limit?/:offset?')
         param('limit').default(50).isInt({min: 1, max: 100}).toInt(),
         param('offset').default(0).isInt({min: 0}).toInt(),
         /* handler */
-        validationWrapper(async ({params: {limit, offset}}, res, next) => {
-            const result = await query('select * from lists order by id desc limit ? offset ?;', [limit, offset]);
+        validationWrapper(async ({params: {limit, offset}}, res) => {
+            const result = await action.getLists(limit, offset);
             res.json(result);
         }));
 
@@ -75,8 +75,8 @@ router.route('/list/:name')
         /* validation rules */
         param('name').isUUID('4'),
         /* handler */
-        validationWrapper(async ({params: {name}}, res, next) => {
-            const [result] = await query('select * from lists where name = ?;', [name]);
+        validationWrapper(async ({params: {name}}, res) => {
+            const result = await action.getListByName(name);
             res.json(result);
         }))
     .post(
@@ -84,25 +84,10 @@ router.route('/list/:name')
         param('name').isUUID('4'),
         body('status').isInt().toInt().isIn(Object.values(statuses)),
         /* handler */
-        validationWrapper(async ({params: {name}, body: {status}}, res, next) => {
-            const conn = await getConnection();
-            try {
-                await promisify(conn.beginTransaction.bind(conn))();
-                await promisify(conn.query.bind(conn))('update lists set status = ?, updated_at = now() where name = ?;', [status, name]);
-                const [result] = await promisify(conn.query.bind(conn))('select * from lists where name = ?;', [name]);
-                appEmitter.emit(LIST_STATUS_CHANGED, result);
-                await promisify(conn.commit.bind(conn))();
-                res.json(result);
-            } catch (err) {
-                if (conn) {
-                    await promisify(conn.rollback.bind(conn))();
-                }
-                next(err);
-            } finally {
-                if (conn) {
-                    conn.release();
-                }
-            }
+        validationWrapper(async ({params: {name}, body: {status}}, res) => {
+            const result = await action.changeListStatus(name, status);
+            appEmitter.emit(LIST_STATUS_CHANGED, result);
+            res.json(result);
         }));
 
 app.use(router);
