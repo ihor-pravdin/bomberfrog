@@ -21,7 +21,7 @@ require('express-async-errors');
 const validationWrapper = fn => (req, res, next) => {
     const {errors} = validationResult(req);
     if (errors.length > 0) {
-        return res.status(400).json({error: errors})
+        return res.status(400).json({error: errors});
     }
     const result = fn(req, res, next);
     return Promise.resolve(result).catch(next);
@@ -59,10 +59,11 @@ app.use(express.json());
 
 router.route('/lists/:limit?/:offset?')
     .get(
+        /* validation rules */
         param('limit').default(50).isInt({min: 1, max: 100}).toInt(),
         param('offset').default(0).isInt({min: 0}).toInt(),
-        validationWrapper(async (req, res, next) => {
-            const {params: {limit, offset}} = req;
+        /* handler */
+        validationWrapper(async ({params: {limit, offset}}, res, next) => {
             const result = await query('select * from lists order by id desc limit ? offset ?;', [limit, offset]);
             res.json(result);
         }));
@@ -71,20 +72,24 @@ router.route('/lists/:limit?/:offset?')
 
 router.route('/list/:name')
     .get(
+        /* validation rules */
         param('name').isUUID('4'),
+        /* handler */
         validationWrapper(async ({params: {name}}, res, next) => {
-            const [result] = await query('select * from lists where name = ?', [name]);
+            const [result] = await query('select * from lists where name = ?;', [name]);
             res.json(result);
         }))
     .post(
+        /* validation rules */
         param('name').isUUID('4'),
         body('status').isInt().toInt().isIn(Object.values(statuses)),
+        /* handler */
         validationWrapper(async ({params: {name}, body: {status}}, res, next) => {
             const conn = await getConnection();
             try {
                 await promisify(conn.beginTransaction.bind(conn))();
-                await promisify(conn.query.bind(conn))('update lists set status = ?, updated_at = now() where name = ?', [status, name]);
-                const [result] = await promisify(conn.query.bind(conn))('select * from lists where name = ?', [name]);
+                await promisify(conn.query.bind(conn))('update lists set status = ?, updated_at = now() where name = ?;', [status, name]);
+                const [result] = await promisify(conn.query.bind(conn))('select * from lists where name = ?;', [name]);
                 appEmitter.emit(LIST_STATUS_CHANGED, result);
                 await promisify(conn.commit.bind(conn))();
                 res.json(result);
