@@ -12,4 +12,4 @@ const pool = mysql.createPool(config);
 
 /*** EXPORTS ***/
 
-module.exports = { pool };
+module.exports = {pool};

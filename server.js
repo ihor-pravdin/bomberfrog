@@ -12,10 +12,6 @@ const app = require('./app');
 
 const {pool} = require('./pool');
 
-/*** WORKERS ***/
-
-const {Worker} = require("worker_threads");
-
 /*** SERVER ***/
 
 const server = app.listen(port, () => {
