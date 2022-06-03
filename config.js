@@ -1,10 +1,12 @@
 module.exports = {
 
-    port: process.env.BF_API_SERVER_PORT || 3001,
+    keeper: {
+        maxWorkers: process.env.BF_MAX_WORKERS || 3
+    },
 
-    maxParallelLists: process.env.BF_MAX_PARALLEL_LISTS || 5,
-
-    maxWorkers: process.env.BF_MAX_WORKERS || 3,
+    http: {
+        port: process.env.BF_API_SERVER_PORT || 3001
+    },
 
     mysql: {
         connectionLimit: process.env.BF_MAX_POOL_SIZE || 10,

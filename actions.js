@@ -64,4 +64,4 @@ module.exports = {
     getLists,
     getListByName,
     changeListStatus
-}
+};

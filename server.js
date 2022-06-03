@@ -2,7 +2,7 @@
 
 /*** CONFIG ***/
 
-const {port} = require('./config');
+const {http: {port}} = require('./config');
 
 /*** APP ***/
 

@@ -3,4 +3,4 @@ module.exports = {
     LIST_FINISHED_STATUS: 1,
     LIST_PROCESSING_STATUS: 2,
     LIST_FAILED_STATUS: 3
-}
+};
