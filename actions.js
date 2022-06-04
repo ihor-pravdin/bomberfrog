@@ -1,28 +1,18 @@
 'use strict'
 
-const {promisify} = require('es6-promisify');
-
-/*** CONSTANTS ***/
-
-const {
-    status: {
-        __NEW__,
-        __PROCESSING__,
-        __STOPPED__
-    }
-} = require('./constants');
+const {promisify} = require('util');
 
 /*** POOL ***/
 
 const {pool} = require('./pool');
 
-/*** APP ERRORS ***/
+/*** ERROR ***/
 
 const Err = require('./error');
 
 /*** QUERIES ***/
 
-const select_lists_query = 'select * from lists order by id desc limit ? offset ?;';
+const select_lists_query = 'select * from lists order by list_id desc limit ? offset ?;';
 
 const select_list_query = 'select * from lists where name = ?;';
 
@@ -57,58 +47,55 @@ const withDBTransaction = fn => async (...args) => {
 
 /*** ACTIONS ***/
 
-const getLists = async (limit, offset) => {
-    return await query(select_lists_query, [limit, offset]);
+/* PRIVATE */
+
+const selectLists = async (conn, limit, offset) => {
+    const qfn = conn ? _query(conn) : query; // query function
+    const results = await qfn(select_lists_query, [limit, offset])
+    return results.map(raw => {
+        const options = JSON.parse(raw.options);
+        return {...raw, options};
+    });
 };
 
-// getLists(50, 0).then(result => console.log(result))
-
-const getListByName = async (name) => {
-    const [result] = await query(select_list_query, [name]);
+const selectListByName = async (conn, name) => {
+    const qfn = conn ? _query(conn) : query;
+    const [result] = await qfn(select_list_query, [name]);
     if (!result) {
         throw new Err(Err.UNKNOWN_LIST, {name});
     }
-    return result;
+    const options = JSON.parse(result.options);
+    return {...result, options};
 };
+
+const updateListStatus = async (conn, name, status) => {
+    const qfn = conn ? _query(conn) : query;
+    return await qfn(update_list_status_query, [status, name]);
+};
+
+/* PUBLIC */
+
+const getLists = selectLists.bind(null, null);
+
+// getLists(50, 0).then(result => console.log(result))
+
+const getListByName = selectListByName.bind(null, null);
 
 // getListByName('31153dfd-f66f-4d83-a0d2-94d56f72946e').then(result => console.log(result))
 
-const changeListStatus = async (name, status) => {
+const setListStatus = async (name, status) => {
     return await withDBTransaction(async (conn, name, status) => {
-        await _query(conn)(update_list_status_query, [status, name]);
-        const [result] = await _query(conn)(select_list_query, [name]);
-        return result;
-    })(name, status)
+        await updateListStatus(conn, name, status);
+        return await selectListByName(conn, name);
+    })(name, status);
 };
 
-// changeListStatus('31153dfd-f66f-4d83-a0d2-94d56f72946e', 2).then(result => console.log(result))
-
-const setProcessingListStatus = async (name) => {
-    return await withDBTransaction(async (conn, name) => {
-        const [list] = await _query(conn)(select_list_query, [name]);
-        const {status} = list;
-        if (!list) {
-            throw new Err(Err.UNKNOWN_LIST, {name});
-        }
-        if (![__NEW__, __STOPPED__].includes(status)) {
-            throw new Err(Err.INVALID_LIST_STATUS, {name, status});
-        }
-        await _query(conn)(update_list_status_query, [__PROCESSING__, name]);
-        return {
-            ...list,
-            status: __PROCESSING__,
-            updated_at: new Date()
-        };
-    })(name);
-};
-
-// runListProcessing('31153dfd-f66f-4d83-a0d2-94d56f72946e').then(result => console.log(result))
+// setListStatus('31153dfd-f66f-4d83-a0d2-94d56f72946e', 2).then(result => console.log(result))
 
 /*** EXPORTS ***/
 
 module.exports = {
     getLists,
     getListByName,
-    changeListStatus,
-    setProcessingListStatus
+    setListStatus,
 };

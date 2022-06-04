@@ -2,7 +2,7 @@ module.exports = {
 
     keeper: {
         workersDir: process.env.BF_WORKERS_DIR || './workers',
-        maxWorkers: process.env.BF_MAX_WORKERS || 3
+        maxWorkers: process.env.BF_MAX_WORKERS || 8
     },
 
     http: {

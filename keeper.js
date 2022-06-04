@@ -1,7 +1,8 @@
 'use strict'
 
-const {Worker} = require("worker_threads");
-const {scheduler} = require('timers/promises');
+const EventEmitter = require('node:events');
+const {Worker} = require('node:worker_threads');
+const {scheduler} = require('node:timers/promises');
 
 /*** CONFIG ***/
 
@@ -13,14 +14,21 @@ const Err = require('./error');
 
 /*** KEEPER ***/
 
-class Keeper {
+// class
+
+class Keeper extends EventEmitter {
 
     constructor() {
+        super();
         this.workers = [];
-    }
+        this.maxWorkers = config.maxWorkers;
 
-    getWorkersCount() {
-        return this.workers.length;
+        //todo: block keeper during workers creation
+
+        this.on(Keeper.LIST_STATUS_CHANGED, payload => {
+            //todo: create workers
+           console.log(Keeper.LIST_STATUS_CHANGED, payload);
+        });
     }
 
     createWorker(list) {
@@ -49,7 +57,7 @@ class Keeper {
     }
 
     async createWorkers(list, n) {
-        if (n + this.getWorkersCount() <= config.maxWorkers) {
+        if (n + this.count <= config.maxWorkers) {
             for(let i = 0; i < n; i++) {
                 this.createWorker(list);
                 await scheduler.wait(500);
@@ -65,28 +73,23 @@ class Keeper {
         return this;
     }
 
-    destroyWorker(id) {
-        const worker = this.workers.filter(w => w.id === id)[0];
-        if (worker) {
-            worker.terminate();
-        }
-        return this;
-    }
-
-    destroyAllWorkers() {
-        this.workers.forEach(({worker}) => worker.terminate());
-        return this;
-    }
-
 }
+
+// static
+
+Keeper.instance = new Keeper();
+
+//--
+
+Keeper.LIST_STATUS_CHANGED = Symbol('LIST_STATUS_CHANGED');
+
+//--
 
 Keeper.workerPath = type => `${config.workersDir}/${type}/worker.js`;
 
-const keeper = new Keeper();
-
 /*** EXPORTS ***/
 
-module.exports = keeper;
+module.exports = Keeper;
 
 // var keeper = new Keeper();
 // keeper.createWorkers({worker: "example", name: "list001"}, 3)
