@@ -6,7 +6,8 @@ module.exports = {
     },
 
     http: {
-        port: process.env.BF_API_SERVER_PORT || 3001
+        port: process.env.BF_API_SERVER_PORT || 3001,
+        hostname: process.env.BF_API_HOSTNAME || '127.0.0.1'
     },
 
     mysql: {

@@ -2,7 +2,7 @@
 
 /*** CONFIG ***/
 
-const {http: {port}} = require('./config');
+const {http: {port, hostname}} = require('./config');
 
 /*** APP ***/
 
@@ -14,8 +14,9 @@ const {pool} = require('./pool');
 
 /*** SERVER ***/
 
-const server = app.listen(port, () => {
+const server = app.listen(port, hostname, () => {
     console.log(`APP SERVER started:`);
+    console.log(`> Hostname: ${hostname}`);
     console.log(`> Port: ${port}`);
 });
 
