@@ -2,20 +2,22 @@
 
 const EventEmitter = require('events');
 
-class AppEmitter extends EventEmitter {}
+/*** INSTANCE ***/
 
-const appEmitter = new AppEmitter();
+class Event extends EventEmitter {}
 
-/*** CONSTANTS ***/
+Event.instance = new Event();
 
-const {LIST_STATUS_CHANGED} = require('./constants/event');
+/*** ***/
 
-/*** EVENT HANDLERS ***/
+Event.LIST_STATUS_CHANGED = Symbol('LIST_STATUS_CHANGED');
 
-appEmitter.on(LIST_STATUS_CHANGED, payload => {
-    console.log(LIST_STATUS_CHANGED, payload);
+/*** HANDLERS ***/
+
+Event.instance.on(Event.LIST_STATUS_CHANGED, payload => {
+    console.log(Event.LIST_STATUS_CHANGED, payload);
 });
 
 /*** EXPORTS ***/
 
-module.exports = appEmitter;
+module.exports = Event;

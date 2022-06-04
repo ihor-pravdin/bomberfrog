@@ -7,7 +7,11 @@ const {scheduler} = require('timers/promises');
 
 const {keeper: config} = require('./config');
 
-/*** ***/
+/*** APP ERRORS ***/
+
+const Err = require('./error');
+
+/*** KEEPER ***/
 
 class Keeper {
 
@@ -51,7 +55,12 @@ class Keeper {
                 await scheduler.wait(500);
             }
         } else {
-            throw new Error('Max workers count reached.');
+            throw new Err(Err.MAX_WORKERS_COUNT, {
+                max: config.maxWorkers,
+                count: this.workers.length,
+                n,
+                description: `count + n > max`
+            });
         }
         return this;
     }
@@ -73,11 +82,11 @@ class Keeper {
 
 Keeper.workerPath = type => `${config.workersDir}/${type}/worker.js`;
 
+const keeper = new Keeper();
+
 /*** EXPORTS ***/
 
-// module.exports = {
-//     createWorker
-// };
+module.exports = keeper;
 
 // var keeper = new Keeper();
 // keeper.createWorkers({worker: "example", name: "list001"}, 3)

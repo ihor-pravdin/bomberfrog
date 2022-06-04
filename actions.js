@@ -5,10 +5,12 @@ const {promisify} = require('es6-promisify');
 /*** CONSTANTS ***/
 
 const {
-    LIST_PROCESSING_STATUS,
-    LIST_NEW_STATUS,
-    LIST_STOPPED_STATUS
-} = require('./constants/status');
+    status: {
+        __NEW__,
+        __PROCESSING__,
+        __STOPPED__
+    }
+} = require('./constants');
 
 /*** POOL ***/
 
@@ -88,13 +90,13 @@ const setProcessingListStatus = async (name) => {
         if (!list) {
             throw new Err(Err.UNKNOWN_LIST, {name});
         }
-        if (![LIST_NEW_STATUS, LIST_STOPPED_STATUS].includes(status)) {
+        if (![__NEW__, __STOPPED__].includes(status)) {
             throw new Err(Err.INVALID_LIST_STATUS, {name, status});
         }
-        await _query(conn)(update_list_status_query, [LIST_PROCESSING_STATUS, name]);
+        await _query(conn)(update_list_status_query, [__PROCESSING__, name]);
         return {
             ...list,
-            status: LIST_PROCESSING_STATUS,
+            status: __PROCESSING__,
             updated_at: new Date()
         };
     })(name);

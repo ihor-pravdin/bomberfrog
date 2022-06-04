@@ -2,7 +2,7 @@
 
 const {body, param} = require('express-validator');
 
-const status = require('./constants/status');
+const {status} = require('./constants');
 
 /*** EXPORTS ***/
 

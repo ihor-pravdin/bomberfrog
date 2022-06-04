@@ -7,10 +7,6 @@ const {validationResult} = require('express-validator');
 
 require('express-async-errors');
 
-/*** CONSTANTS ***/
-
-const {LIST_STATUS_CHANGED} = require('./constants/event');
-
 /*** SPEC ***/
 
 const spec = require('./spec');
@@ -19,9 +15,9 @@ const spec = require('./spec');
 
 const action = require('./actions');
 
-/*** EVENTS EMITTER ***/
+/*** EVENT EMITTER ***/
 
-const emitter = require('./events');
+const Event = require('./events');
 
 /*** MIDDLEWARE ***/
 
@@ -48,7 +44,7 @@ const getListByName = validationWrapper(async ({params: {name}}, res) => {
 
 const runListProcessing = validationWrapper(async ({params: {name}}, res) => {
     const result = await action.setProcessingListStatus(name);
-    emitter.emit(LIST_STATUS_CHANGED, result);
+    Event.instance.emit(Event.LIST_STATUS_CHANGED, result);
     res.json(result);
 });
 
