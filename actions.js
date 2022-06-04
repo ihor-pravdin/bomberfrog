@@ -1,6 +1,6 @@
 'use strict'
 
-const {promisify} = require('util');
+const {promisify} = require('node:util');
 
 /*** POOL ***/
 
@@ -52,9 +52,9 @@ const withDBTransaction = fn => async (...args) => {
 const selectLists = async (conn, limit, offset) => {
     const qfn = conn ? _query(conn) : query; // query function
     const results = await qfn(select_lists_query, [limit, offset])
-    return results.map(raw => {
-        const options = JSON.parse(raw.options);
-        return {...raw, options};
+    return results.map(row => {
+        const options = JSON.parse(row.options);
+        return {...row, options};
     });
 };
 
@@ -94,8 +94,22 @@ const setListStatus = async (name, status) => {
 
 /*** EXPORTS ***/
 
-module.exports = {
-    getLists,
-    getListByName,
-    setListStatus,
-};
+if (require.main !== module) {
+    module.exports = {
+        getLists,
+        getListByName,
+        setListStatus,
+    };
+
+}
+
+/*** REPL ***/
+
+else {
+    console.log('REPL:', __filename);
+    const repl = require('node:repl');
+    const context = repl.start('> ').context;
+    context.getLists = getLists;
+    context.getListByName = getListByName;
+    context.setListStatus = setListStatus;
+}
