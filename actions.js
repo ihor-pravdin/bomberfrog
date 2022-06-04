@@ -109,6 +109,7 @@ else {
     console.log('REPL:', __filename);
     const repl = require('node:repl');
     const context = repl.start('> ').context;
+    context.query = query;
     context.getLists = getLists;
     context.getListByName = getListByName;
     context.setListStatus = setListStatus;
