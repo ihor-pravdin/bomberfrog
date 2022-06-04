@@ -46,8 +46,8 @@ const getListByName = validationWrapper(async ({params: {name}}, res) => {
     res.json(result);
 });
 
-const changeListStatus = validationWrapper(async ({params: {name}, body: {status}}, res) => {
-    const result = await action.changeListStatus(name, status);
+const runListProcessing = validationWrapper(async ({params: {name}}, res) => {
+    const result = await action.setProcessingListStatus(name);
     emitter.emit(LIST_STATUS_CHANGED, result);
     res.json(result);
 });
@@ -74,8 +74,11 @@ router
 
 router
     .route('/list/:name')
-    .get(spec.name, getListByName)
-    .post(spec.name, spec.status, changeListStatus);
+    .get(spec.name, getListByName);
+
+router
+    .route('/run/:name')
+    .post(spec.name, runListProcessing);
 
 app
     .use(router) // app routes
