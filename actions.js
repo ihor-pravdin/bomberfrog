@@ -1,6 +1,6 @@
 'use strict'
 
-const {promisify} = require('util');
+const {promisify} = require('node:util');
 
 /*** POOL ***/
 
@@ -20,9 +20,9 @@ const update_list_status_query = 'update lists set status = ? where name = ?;';
 
 /*** HELPERS ***/
 
-const _query = conn => promisify(conn.query.bind(conn));
+const _query = conn => promisify(conn.query.bind(conn)); // conn.query( ... );
 
-const query = promisify(pool.query.bind(pool));
+const query = promisify(pool.query.bind(pool)); // pool.query( ... );
 
 const getConnection = promisify(pool.getConnection.bind(pool));
 

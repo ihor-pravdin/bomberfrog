@@ -11,9 +11,9 @@ require('express-async-errors');
 
 const {
     status: {
-        __NEW__,
-        __PROCESSING__,
-        __STOPPED__
+        NEW_STATUS,
+        PROCESSING_STATUS,
+        STOPPED_STATUS
     }
 } = require('./constants');
 
@@ -63,21 +63,16 @@ const getListByName = validationWrapper(async ({params: {name}}, res) => {
 });
 
 const processList = validationWrapper(async ({params: {name}}, res, next) => {
-    const {status, options: {workers}} = await action.getListByName(name);
-    if (Keeper.instance.maxWorkers < workers + Keeper.instance.workers.length) {
-        return next(new Err(Err.MAX_WORKERS_COUNT, {
-            name,
-            description: {
-                max: Keeper.instance.maxWorkers,
-                current: Keeper.instance.workers.length,
-                requested: workers
-            }
-        }));
+    const {status, options: {workers: required}} = await action.getListByName(name);
+    const max = Keeper.instance.maxWorkers;
+    const current = Keeper.instance.workers.length;
+    if (max < required + current) {
+        return next(new Err(Err.MAX_WORKERS_COUNT, {name, description: {max, current, required}}));
     }
-    if (![__NEW__, __STOPPED__].includes(status)) {
+    if (![NEW_STATUS, STOPPED_STATUS].includes(status)) {
         return next(new Err(Err.INVALID_LIST_STATUS, {name, status}));
     }
-    const result = await action.setListStatus(name, __PROCESSING__);
+    const result = await action.setListStatus(name, PROCESSING_STATUS);
     Keeper.instance.emit(Keeper.LIST_STATUS_CHANGED, result);
     return result;
 });

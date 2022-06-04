@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/igor-pravdin/bomberfrog.git"
+    "url": "git+https://github.com/ihor-pravdin/bomberfrog.git"
   },
   "author": "Toad Person",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/igor-pravdin/bomberfrog/issues"
+    "url": "https://github.com/ihor-pravdin/bomberfrog/issues"
   },
-  "homepage": "https://github.com/igor-pravdin/bomberfrog#readme",
+  "homepage": "https://github.com/ihor-pravdin/bomberfrog#readme",
   "engines": {
     "node": ">=17.3.0",
     "npm": ">= 8"
