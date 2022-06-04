@@ -1,6 +1,6 @@
 'use strict'
 
-const {promisify} = require('node:util');
+const {promisify} = require('util');
 
 /*** POOL ***/
 
@@ -94,23 +94,8 @@ const setListStatus = async (name, status) => {
 
 /*** EXPORTS ***/
 
-if (require.main !== module) {
-    module.exports = {
-        getLists,
-        getListByName,
-        setListStatus,
-    };
-
-}
-
-/*** REPL ***/
-
-else {
-    console.log('REPL:', __filename);
-    const repl = require('node:repl');
-    const context = repl.start('> ').context;
-    context.query = query;
-    context.getLists = getLists;
-    context.getListByName = getListByName;
-    context.setListStatus = setListStatus;
-}
+module.exports = {
+    getLists,
+    getListByName,
+    setListStatus,
+};
