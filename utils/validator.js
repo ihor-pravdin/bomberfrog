@@ -16,8 +16,6 @@ function ValidatorChain(str) {
     });
 }
 
-ValidatorChain.prototype.name = 'ValidatorChain';
-
 Object.keys(validator).forEach(fn => {
     ValidatorChain.prototype[fn] = function (...args) {
         const {str, errors, sanitized} = states.get(this);
@@ -50,7 +48,7 @@ ValidatorChain.isValid = chain => {
 
 ValidatorChain.conform = chain => {
     const {errors, sanitized} = states.get(chain);
-    return !errors.length ? sanitized : null;
+    return !errors.length ? sanitized || true : null;
 };
 // ValidatorChain.conform(ValidatorChain.check('10').isInt().toInt())
 

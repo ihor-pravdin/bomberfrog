@@ -19,7 +19,7 @@ module.exports = {
     },
 
     mysql: {
-        connectionLimit:conform(check(process.env.BF_MAX_POOL_SIZE || '').isInt().toInt()) || 10,
+        connectionLimit: conform(check(process.env.BF_MAX_POOL_SIZE || '').isInt().toInt()) || 10,
         host: process.env.BF_MYSQL_HOST || 'localhost',
         user: process.env.BF_MYSQL_USER || 'root',
         password: process.env.BF_MYSQL_PASSWORD || 'bomberfrog',

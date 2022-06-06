@@ -38,7 +38,7 @@ const Keeper = require('./keeper');
 const validationWrapper = fn => (req, res, next) => {
     const {errors} = validationResult(req);
     if (errors.length > 0) {
-        const err = new Err(Err.VALIDATION_FAILED, {
+        const err = new Err(Err.REQUEST_VALIDATION_FAILED, {
             params: req.params,
             body: req.body,
             description: errors
