@@ -8,6 +8,19 @@ const {scheduler} = require('node:timers/promises');
 
 const {keeper: config} = require('./config');
 
+/*** CONSTANTS ***/
+
+const {
+    status: {
+        FINISHED_STATUS,
+        FAILED_STATUS
+    }
+} = require('./constants');
+
+/*** ACTIONS ***/
+
+const action = require('./actions');
+
 /*** KEEPER ***/
 
 // CLASS
@@ -42,7 +55,7 @@ class Keeper extends EventEmitter {
         });
 
         worker.once("exit", exitCode => {
-            console.log(`worker:${id} exited with code ${exitCode}`);
+            console.log(`Worker '${name}:${id}' exited with code ${exitCode}.`);
             this.workers = this.workers.filter(w => w.id !== id);
         });
 
@@ -84,24 +97,32 @@ Keeper.LIST_PROCESSING_FAILED = Symbol('LIST_PROCESSING_FAILED');
 // HANDLERS
 
 Keeper.instance.on(Keeper.PROCESS_LIST, list => {
-    console.log(`List '${list.name}' is starting.`)
+    console.log(`List '${list.name}' is starting.`);
     Keeper.instance.createWorkers(list)
         .then(() => {
-            //todo: write logs to file
             console.log(`List '${list.name}' started.`);
         })
         .catch(err => {
-            //todo: write logs to file
             console.log('err', err);
         });
 });
 
-Keeper.instance.on(Keeper.LIST_PROCESSING_FINISHED, list => {
-   console.log('FINISHED', list);
+Keeper.instance.on(Keeper.LIST_PROCESSING_FINISHED, ({name, updated_at}) => {
+    action.setListStatus(name, FINISHED_STATUS).then(list => {
+        console.log(`List '${name}' finished.`);
+        console.log(`Time: ${list['updated_at'].getTime() - updated_at.getTime()} ms.`);
+    }).catch(err => {
+        console.log('err', err);
+    });
 });
 
-Keeper.instance.on(Keeper.LIST_PROCESSING_FAILED, list => {
-    console.log('FAILED', list);
+Keeper.instance.on(Keeper.LIST_PROCESSING_FAILED, ({name, updated_at}) => {
+    action.setListStatus(name, FAILED_STATUS).then(list => {
+        console.log(`List '${name}' failed.`);
+        console.log(`Time: ${list['updated_at'].getTime() - updated_at.getTime()} ms.`);
+    }).catch(err => {
+        console.log('err', err);
+    });
 });
 
 /*** EXPORTS ***/
