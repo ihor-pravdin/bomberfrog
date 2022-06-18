@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 const EventEmitter = require('node:events');
 const {Worker} = require('node:worker_threads');
@@ -8,94 +8,102 @@ const {scheduler} = require('node:timers/promises');
 
 const {keeper: config} = require('./config');
 
-/*** APP ERRORS ***/
-
-const Err = require('./error');
-
 /*** KEEPER ***/
 
-// class
+// CLASS
 
 class Keeper extends EventEmitter {
 
-    constructor() {
+    constructor(options = config) {
         super();
         this.workers = [];
-        this.maxWorkers = config.maxWorkers;
-
-        //todo: block keeper during workers creation
-
-        this.on(Keeper.LIST_STATUS_CHANGED, payload => {
-            //todo: create workers
-           console.log(Keeper.LIST_STATUS_CHANGED, payload);
-        });
+        this.busy = false;
+        this.workersDir = options.workersDir;
+        this.maxWorkers = options.maxWorkers;
     }
 
     createWorker(list) {
         const {name, worker: type} = list;
-
         const id = Date.now();
-
-        const worker = new Worker(Keeper.workerPath(type), {workerData: {id, ...list}});
+        const worker = new Worker(`${this.workersDir}/${type}/worker.js`, {workerData: {id, ...list}});
 
         worker.once('message', result => {
-            console.log(result);
+            console.log(`result [${id}]`, result);
+            if (this.workers.filter(w => w.name === name).length === 1) {
+                this.emit(Keeper.LIST_PROCESSING_FINISHED, list);
+            }
         });
 
-        worker.on('error', err => {
-            console.log(err);
+        worker.once('error', err => {
+            console.log(`error [${id}]`, err);
+            if (this.workers.filter(w => w.name === name).length === 1) {
+                this.emit(Keeper.LIST_PROCESSING_FAILED, list);
+            }
         });
 
-        worker.on("exit", exitCode => {
-            this.workers = this.workers.filter(w => w.id !== id);
+        worker.once("exit", exitCode => {
             console.log(`worker:${id} exited with code ${exitCode}`);
+            this.workers = this.workers.filter(w => w.id !== id);
         });
 
         this.workers = [...this.workers, {id, name, type, worker}];
-
         return this;
     }
 
-    async createWorkers(list, n) {
-        if (n + this.count <= config.maxWorkers) {
-            for(let i = 0; i < n; i++) {
+    async createWorkers(list) {
+        if (this.busy === false) {
+            const {options: {delay, workers: n}} = list;
+            this.busy = true;
+            for (let i = 0; i < n; i++) {
                 this.createWorker(list);
-                await scheduler.wait(500);
+                if (delay && delay !== 0) {
+                    await scheduler.wait(delay);
+                }
             }
-        } else {
-            throw new Err(Err.MAX_WORKERS_COUNT, {
-                max: config.maxWorkers,
-                count: this.workers.length,
-                n,
-                description: `count + n > max`
-            });
+            this.busy = false;
         }
         return this;
     }
 
+    processList(list) {
+        this.emit(Keeper.PROCESS_LIST, list);
+    }
+
 }
 
-// static
+// INSTANCE
 
 Keeper.instance = new Keeper();
 
-//--
+// EVENTS
 
-Keeper.LIST_STATUS_CHANGED = Symbol('LIST_STATUS_CHANGED');
+Keeper.PROCESS_LIST = Symbol('PROCESS_LIST');
+Keeper.LIST_PROCESSING_FINISHED = Symbol('LIST_PROCESSING_FINISHED');
+Keeper.LIST_PROCESSING_FAILED = Symbol('LIST_PROCESSING_FAILED');
 
-//--
+// HANDLERS
 
-Keeper.workerPath = type => `${config.workersDir}/${type}/worker.js`;
+Keeper.instance.on(Keeper.PROCESS_LIST, list => {
+    console.log(`List '${list.name}' is starting.`)
+    Keeper.instance.createWorkers(list)
+        .then(() => {
+            //todo: write logs to file
+            console.log(`List '${list.name}' started.`);
+        })
+        .catch(err => {
+            //todo: write logs to file
+            console.log('err', err);
+        });
+});
+
+Keeper.instance.on(Keeper.LIST_PROCESSING_FINISHED, list => {
+   console.log('FINISHED', list);
+});
+
+Keeper.instance.on(Keeper.LIST_PROCESSING_FAILED, list => {
+    console.log('FAILED', list);
+});
 
 /*** EXPORTS ***/
 
-module.exports = Keeper;
-
-// var keeper = new Keeper();
-// keeper.createWorkers({worker: "example", name: "list001"}, 3)
-//     .then(keeper => console.log(keeper))
-//     .catch(err => console.log('Error:', err.message))
-
-//keeper.createWorker({worker: "example", name: "list001"})
-
-//console.log(keeper);
+module.exports = Keeper.instance;

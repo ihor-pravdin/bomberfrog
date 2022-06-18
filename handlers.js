@@ -20,7 +20,7 @@ const Err = require('./error');
 
 /*** KEEPER ***/
 
-const Keeper = require('./keeper');
+const keeper = require('./keeper');
 
 /*** ROUTER HANDLERS ***/
 
@@ -56,32 +56,35 @@ const exceptionHandler = (err, req, res, next) => {
 //
 
 const getLists = async ({params: {limit, offset}}, res) => {
-    const result = await action.getLists(limit, offset);
-    res.json(result);
+    const lists = await action.getLists(limit, offset);
+    res.json(lists);
 };
 
 //
 
 const getListByName = async ({params: {name}}, res) => {
-    const result = await action.getListByName(name);
-    res.json(result);
+    const list = await action.getListByName(name);
+    res.json(list);
 };
 
 //
 
 const processList = async ({params: {name}}, res, next) => {
     const {status, options: {workers: required}} = await action.getListByName(name);
-    const max = Keeper.instance.maxWorkers;
-    const current = Keeper.instance.workers.length;
+    const max = keeper.maxWorkers;
+    const current = keeper.workers.length;
+    if (keeper.busy) {
+        return next(new Err(Err.KEEPER_IS_BUSY));
+    }
     if (max < required + current) {
         return next(new Err(Err.MAX_WORKERS_COUNT, {name, description: {max, current, required}}));
     }
     if (![NEW_STATUS, STOPPED_STATUS].includes(status)) {
         return next(new Err(Err.INVALID_LIST_STATUS, {name, status}));
     }
-    const result = await action.setListStatus(name, PROCESSING_STATUS);
-    Keeper.instance.emit(Keeper.LIST_STATUS_CHANGED, result);
-    res.json(result);
+    const list = await action.setListStatus(name, PROCESSING_STATUS);
+    keeper.processList(list);
+    res.json(list);
 };
 
 /*** EXPORTS ***/
