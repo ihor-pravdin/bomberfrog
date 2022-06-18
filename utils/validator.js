@@ -24,36 +24,33 @@ Object.keys(validator).forEach(fn => {
         if (result === false) {
             errors.push({
                 fn,
-                msg: `${fn}(${args.join(', ')}) failed with '${str}'`,
-                param: str
+                param: str,
+                message: `${fn}(${args.map(arg => JSON.stringify(arg)).join(', ')}) failed with '${str}'`
             });
         }
-        state.sanitized = typeof result !== 'boolean' ? result : sanitized;
+        state.sanitized = typeof result === 'boolean' ? sanitized : result;
         state.errors = errors;
         states.set(this, state);
         return this;
-    };
+    }
 });
 
 /*** STATIC ***/
 
-ValidatorChain.check = str => new ValidatorChain(str);
+ValidatorChain.check = str => new ValidatorChain('' + str);
 // ValidatorChain.check('10')
 
-ValidatorChain.isValid = chain => {
-    const {errors} = states.get(chain);
-    return !errors.length;
-};
-// ValidatorChain.isValid(ValidatorChain.check('10').isInt().toInt())
-
 ValidatorChain.conform = chain => {
-    const {errors, sanitized} = states.get(chain);
-    return !errors.length ? sanitized || true : null;
+    const {str, errors, sanitized} = states.get(chain);
+    return errors.length === 0 ? sanitized || str : null;
 };
 // ValidatorChain.conform(ValidatorChain.check('10').isInt().toInt())
 
 ValidatorChain.validationErrors = chain => states.get(chain).errors;
 // ValidatorChain.validationErrors(ValidatorChain.check('10').isInt().toInt())
+
+ValidatorChain.isValid = chain => ValidatorChain.validationErrors(chain).length === 0;
+// ValidatorChain.isValid(ValidatorChain.check('10').isInt().toInt())
 
 /*** EXPORTS ***/
 
