@@ -5,5 +5,6 @@ module.exports = {
         PROCESSING_STATUS: 2,
         FAILED_STATUS: 3,
         STOPPED_STATUS: 4
-    }
+    },
+    workers: ['example']
 };

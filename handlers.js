@@ -87,6 +87,13 @@ const processList = async ({params: {name}}, res, next) => {
     res.json(list);
 };
 
+//
+
+const createList = async ({body: {worker, description, workers, delay}}, res) => {
+    const list = await action.addList({worker, description, options: {delay, workers}});
+    res.json(list);
+};
+
 /*** EXPORTS ***/
 
 module.exports = {
@@ -94,5 +101,6 @@ module.exports = {
     exceptionHandler,
     getLists,
     getListByName,
-    processList
+    processList,
+    createList
 };

@@ -4,7 +4,7 @@ const {body, param, validationResult} = require('express-validator');
 
 const Err = require('./error');
 
-const {status} = require('./constants');
+const constant = require('./constants');
 
 /*** EXPORTS ***/
 
@@ -15,7 +15,11 @@ module.exports = {
     limit: param('limit').default(50).isInt({min: 1, max: 100}).toInt(),
     offset: param('offset').default(0).isInt({min: 0}).toInt(),
     name: param('name').isUUID('4'),
-    status: body('status').isInt().toInt().isIn(Object.values(status)),
+    status: body('status').isInt().toInt().isIn(Object.values(constant.status)),
+    worker: body('worker').isIn(constant.workers),
+    workers: body('workers').default(1).isInt({min: 1}).toInt(),
+    delay: body('delay').default(0).isInt({min: 0}).toInt(),
+    description: body('description').default(null).isLength({ max: 128 }),
 
     // VALIDATION MIDDLEWARE
 

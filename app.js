@@ -26,15 +26,23 @@ router
     );
 
 router
-    .route('/list/:name')
+    .route('/list/:name?')
     .get(
         spec.name,
         spec.validate,
         handler.getListByName
+    )
+    .put(
+        spec.worker,
+        spec.description,
+        spec.workers,
+        spec.delay,
+        spec.validate,
+        handler.createList
     );
 
 router
-    .route('/run/:name')
+    .route('/process/list/:name')
     .post(
         spec.name,
         spec.validate,
