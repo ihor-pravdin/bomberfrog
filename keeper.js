@@ -38,7 +38,8 @@ class Keeper extends EventEmitter {
     createWorker(list) {
         const {name, worker: type} = list;
         const id = Date.now();
-        const worker = new Worker(`${this.workersDir}/${type}/worker.js`, {workerData: {id, ...list}});
+        const filePath = `${this.workersDir}/${type}/worker.js`;
+        const worker = new Worker(filePath, {workerData: {id, ...list}});
 
         worker.once('message', result => {
             console.log(`result [${id}]`, result);
@@ -94,7 +95,7 @@ Keeper.PROCESS_LIST = Symbol('PROCESS_LIST');
 Keeper.LIST_PROCESSING_FINISHED = Symbol('LIST_PROCESSING_FINISHED');
 Keeper.LIST_PROCESSING_FAILED = Symbol('LIST_PROCESSING_FAILED');
 
-// HANDLERS
+// PROCESS_LIST
 
 Keeper.instance.on(Keeper.PROCESS_LIST, list => {
     console.log(`List '${list.name}' is starting.`);
@@ -107,6 +108,8 @@ Keeper.instance.on(Keeper.PROCESS_LIST, list => {
         });
 });
 
+// LIST_PROCESSING_FINISHED
+
 Keeper.instance.on(Keeper.LIST_PROCESSING_FINISHED, ({name, updated_at}) => {
     action.setListStatus(name, FINISHED_STATUS).then(list => {
         console.log(`List '${name}' finished.`);
@@ -115,6 +118,8 @@ Keeper.instance.on(Keeper.LIST_PROCESSING_FINISHED, ({name, updated_at}) => {
         console.log('err', err);
     });
 });
+
+// LIST_PROCESSING_FAILED
 
 Keeper.instance.on(Keeper.LIST_PROCESSING_FAILED, ({name, updated_at}) => {
     action.setListStatus(name, FAILED_STATUS).then(list => {

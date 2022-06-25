@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 const {body, param, validationResult} = require('express-validator');
 
@@ -25,9 +25,8 @@ module.exports = {
 
     validate: (req, res, next) => {
         const {errors} = validationResult(req);
-        if (errors.length > 0) {
-            return next(new Err(Err.REQUEST_VALIDATION_FAILED, {description: errors}));
-        }
-        return next(null, req, res, next);
+        return errors.length === 0
+            ? next(null, req, res, next)
+            : next(new Err(Err.REQUEST_VALIDATION_FAILED, {description: errors}));
     }
 };

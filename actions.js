@@ -54,7 +54,7 @@ const withDBTransaction = fn => async (...args) => {
 
 const selectLists = async (conn, limit, offset) => {
     const qfn = conn ? _query(conn) : query; // query function
-    const results = await qfn(select_lists_query, [limit, offset])
+    const results = await qfn(select_lists_query, [limit, offset]);
     return results.map(row => {
         const options = JSON.parse(row.options);
         return {...row, options};
