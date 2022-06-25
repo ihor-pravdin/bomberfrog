@@ -8,6 +8,10 @@ const {scheduler} = require('node:timers/promises');
 
 const {keeper: config} = require('./config');
 
+/*** LOGGER ***/
+
+const {appLogger: log} = require('./logger');
+
 /*** CONSTANTS ***/
 
 const {
@@ -42,21 +46,21 @@ class Keeper extends EventEmitter {
         const worker = new Worker(filePath, {workerData: {id, ...list}});
 
         worker.once('message', result => {
-            console.log(`result [${id}]`, result);
+            log.debug(`Worker '${name}::${id}' result:`, result);
             if (this.workers.filter(w => w.name === name).length === 1) {
                 this.emit(Keeper.LIST_PROCESSING_FINISHED, list);
             }
         });
 
         worker.once('error', err => {
-            console.log(`error [${id}]`, err);
+            log.error(`Worker '${name}::${id}' error:`, err.stack);
             if (this.workers.filter(w => w.name === name).length === 1) {
                 this.emit(Keeper.LIST_PROCESSING_FAILED, list);
             }
         });
 
         worker.once("exit", exitCode => {
-            console.log(`Worker '${name}:${id}' exited with code ${exitCode}.`);
+            log.debug(`Worker '${name}::${id}' exited with code ${exitCode}.`);
             this.workers = this.workers.filter(w => w.id !== id);
         });
 
@@ -98,35 +102,39 @@ Keeper.LIST_PROCESSING_FAILED = Symbol('LIST_PROCESSING_FAILED');
 // PROCESS_LIST
 
 Keeper.instance.on(Keeper.PROCESS_LIST, list => {
-    console.log(`List '${list.name}' is starting.`);
     Keeper.instance.createWorkers(list)
         .then(() => {
-            console.log(`List '${list.name}' started.`);
+            log.info(`List '${list.name}' started.`);
         })
         .catch(err => {
-            console.log('err', err);
+            log.error(`List '${list.name}' starting failed.`, list);
+            log.error(err.stack);
         });
 });
 
 // LIST_PROCESSING_FINISHED
 
-Keeper.instance.on(Keeper.LIST_PROCESSING_FINISHED, ({name, updated_at}) => {
+Keeper.instance.on(Keeper.LIST_PROCESSING_FINISHED, list => {
+    const {name, updated_at} = list;
     action.setListStatus(name, FINISHED_STATUS).then(list => {
-        console.log(`List '${name}' finished.`);
-        console.log(`Time: ${list['updated_at'].getTime() - updated_at.getTime()} ms.`);
+        const time = list['updated_at'].getTime() - updated_at.getTime();
+        log.info(`List '${name}' finished.`, {time});
     }).catch(err => {
-        console.log('err', err);
+        log.error(`List '${name}' finishing failed.`, list);
+        log.error(err.stack);
     });
 });
 
 // LIST_PROCESSING_FAILED
 
-Keeper.instance.on(Keeper.LIST_PROCESSING_FAILED, ({name, updated_at}) => {
+Keeper.instance.on(Keeper.LIST_PROCESSING_FAILED, list => {
+    const {name, updated_at} = list;
     action.setListStatus(name, FAILED_STATUS).then(list => {
-        console.log(`List '${name}' failed.`);
-        console.log(`Time: ${list['updated_at'].getTime() - updated_at.getTime()} ms.`);
+        const time = list['updated_at'].getTime() - updated_at.getTime();
+        log.info(`List '${name}' failed.`, {time});
     }).catch(err => {
-        console.log('err', err);
+        log.error(`List '${name}' failing failed.`, list);
+        log.error(err.stack);
     });
 });
 

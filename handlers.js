@@ -10,6 +10,10 @@ const {
     }
 } = require('./constants');
 
+/*** LOGGER ***/
+
+const {appLogger: log} = require('./logger');
+
 /*** ACTIONS ***/
 
 const action = require('./actions');
@@ -31,7 +35,6 @@ const notFound = (req, res, next) => next(new Err(Err.UNKNOWN_ROUTE, {url: req.o
 // default exception handler
 
 const exceptionHandler = (err, req, res, next) => {
-    console.log(err);
     if (res.headersSent) {
         return next(err);
     }
@@ -41,14 +44,17 @@ const exceptionHandler = (err, req, res, next) => {
             switch (err.message) {
                 // 404
                 case Err.UNKNOWN_ROUTE:
+                    log.http(err.message, err.data);
                     return res.status(404).json(err.data);
 
                 default:
+                    log.warn(err.message, err.data);
                     return res.status(400).json(err.data);
             }
 
         default:
             const error = new Err(Err.UNKNOWN_ERROR, {description: err.message})
+            log.error(error.stack);
             return res.status(500).json(error.data);
     }
 };

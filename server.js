@@ -11,7 +11,7 @@ const app = require('./app');
 
 /*** LOGGER ***/
 
-const log = require('./logger').appLogger;
+const {appLogger: log} = require('./logger');
 
 /*** POOL ***/
 
