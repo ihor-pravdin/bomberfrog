@@ -30,7 +30,7 @@ module.exports = {
         dir: `${__dirname}/logs/`,
         app: {
             level: 'info',
-            datePattern: "YYYY-MM-DD",
+            datePattern: 'YYYY-MM-DD',
             maxSize: '10m',
             maxFiles: '14d',
             zippedArchive: true

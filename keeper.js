@@ -59,7 +59,7 @@ class Keeper extends EventEmitter {
             }
         });
 
-        worker.once("exit", exitCode => {
+        worker.once('exit', exitCode => {
             log.debug(`Worker '${name}::${id}' exited with code ${exitCode}.`);
             this.workers = this.workers.filter(w => w.id !== id);
         });
