@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 'use strict';
 
 /*** LOGGER ***/
@@ -11,13 +10,19 @@ const action = require('./actions');
 
 /*** INIT ***/
 
-action.createListsTable()
-    .then(() => {
-       log.info('Initialization complete.');
-       process.exit(0);
-    })
-    .catch(err => {
+const init = async () => action.createListsTable();
+
+/*** ***/
+
+if (require.main === module) {
+    init().then(() => {
+        log.info('Initialization complete.');
+        process.exit(0);
+    }).catch(err => {
         log.error('Initialization failed!');
         log.error(err.stack);
         process.exit(1);
     });
+} else {
+    module.exports = init;
+}
