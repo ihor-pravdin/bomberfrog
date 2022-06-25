@@ -25,7 +25,7 @@ const appLogger = createLogger({
             level: config.app.level
         }),
         new transports.DailyRotateFile({
-            filename: config.dir + "app-%DATE%.log",
+            filename: `${config.dir}app-%DATE%.log`,
             ...config.app
         })
     ]

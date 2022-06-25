@@ -53,8 +53,9 @@ const exceptionHandler = (err, req, res, next) => {
             }
 
         default:
-            const error = new Err(Err.UNKNOWN_ERROR, {description: err.message})
-            log.error(error.stack);
+            const error = new Err(Err.UNKNOWN_ERROR, {description: err.message});
+            log.error(error.message, error.data);
+            log.error(err.stack);
             return res.status(500).json(error.data);
     }
 };
