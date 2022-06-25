@@ -24,6 +24,20 @@ module.exports = {
         user: process.env.BF_MYSQL_USER || 'root',
         password: process.env.BF_MYSQL_PASSWORD || 'bomberfrog',
         database: process.env.BF_MYSQL_DATABASE || 'bomberfrog'
+    },
+
+    logger: {
+        dir: `${__dirname}/logs/`,
+        app: {
+            level: 'info',
+            datePattern: "YYYY-MM-DD",
+            maxSize: '10m',
+            maxFiles: '14d',
+            zippedArchive: true
+        },
+        worker: {
+            level: 'info'
+        }
     }
 
 };

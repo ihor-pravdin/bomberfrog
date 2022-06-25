@@ -4,25 +4,29 @@ const {createLogger, format, transports} = require("winston");
 
 require("winston-daily-rotate-file");
 
+/*** CONFIG ***/
+
+const {logger: config} = require('./config');
+
+/*** DEFAULT FORMAT ***/
+
+const defaultFormat = format.combine(
+    format.timestamp(),
+    format.splat(),
+    format.simple()
+);
+
 /*** APP LOGGER ***/
 
 const appLogger = createLogger({
-    format: format.combine(
-        format.timestamp(),
-        format.splat(),
-        format.simple()
-    ),
+    format: defaultFormat,
     transports: [
         new transports.Console({
-            level: 'info'
+            level: config.app.level
         }),
         new transports.DailyRotateFile({
-            filename: "logs/app-%DATE%.log",
-            datePattern: "YYYY-MM-DD",
-            zippedArchive: true,
-            maxSize: "20m",
-            maxFiles: "14d",
-            level: 'info'
+            filename: config.dir + "app-%DATE%.log",
+            ...config.app
         })
     ]
 });
@@ -30,19 +34,14 @@ const appLogger = createLogger({
 /*** WORKER LOGGER ***/
 
 const workerLogger = name => createLogger({
-    format: format.combine(
-        format.timestamp(),
-        format.splat(),
-        format.simple()
-    ),
+    format: defaultFormat,
     transports: [
         new transports.File({
-            filename: `${__dirname}/logs/${name}.log`,
-            level: 'info'
+            filename: `${config.dir}${name}.log`,
+            level: config.worker.level
         })
     ]
 });
-
 
 /*** EXPORTS ***/
 
@@ -50,6 +49,3 @@ module.exports = {
     appLogger,
     workerLogger
 };
-
-// appLogger.info('foo');
-// appLogger.info('foo', {foo: 'foo'}, {bar: 'bar'});
