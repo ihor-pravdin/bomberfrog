@@ -42,7 +42,7 @@ class Keeper extends EventEmitter {
     createWorker(list) {
         const {name, worker: type} = list;
         const id = Date.now();
-        const filePath = `${this.workersDir}/${type}/worker.js`;
+        const filePath = `${this.workersDir}/${type}/run.js`;
         const worker = new Worker(filePath, {workerData: {id, ...list}});
 
         worker.once('message', result => {
@@ -68,6 +68,14 @@ class Keeper extends EventEmitter {
         return this;
     }
 
+    async initWorker(list) {
+        const {worker: type} = list;
+        const modulePath = `${this.workersDir}/${type}/worker.js`;
+        const init = require(modulePath).init;
+        await init(list);
+        return this;
+    }
+
     async createWorkers(list) {
         if (this.busy === false) {
             const {options: {delay, workers: n}} = list;
@@ -85,9 +93,14 @@ class Keeper extends EventEmitter {
 
     processList(list) {
         this.emit(Keeper.PROCESS_LIST, list);
+        return this;
     }
 
 }
+
+// INIT
+
+Keeper.init = async () => await action.createListsTable();
 
 // INSTANCE
 
@@ -102,7 +115,6 @@ Keeper.LIST_PROCESSING_FAILED = Symbol('LIST_PROCESSING_FAILED');
 // PROCESS_LIST
 
 Keeper.instance.on(Keeper.PROCESS_LIST, list => {
-    // todo: init worker
     Keeper.instance.createWorkers(list)
         .then(() => {
             log.info(`List '${list.name}' started.`);
@@ -141,4 +153,7 @@ Keeper.instance.on(Keeper.LIST_PROCESSING_FAILED, list => {
 
 /*** EXPORTS ***/
 
-module.exports = Keeper.instance;
+module.exports = {
+    instance: Keeper.instance,
+    init: Keeper.init
+};

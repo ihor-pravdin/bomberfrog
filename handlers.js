@@ -24,7 +24,7 @@ const Err = require('./error');
 
 /*** KEEPER ***/
 
-const keeper = require('./keeper');
+const {instance: keeper} = require('./keeper');
 
 /*** ROUTER HANDLERS ***/
 

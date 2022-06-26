@@ -1,9 +1,9 @@
 'use strict';
 
-import {mysql} from '../db';
-import {workerLogger} from '../logger';
+const {mysql} = require('../db');
+const {workerLogger} =  require('../logger');
 
-export class Worker {
+class AbstractWorker {
 
     constructor(list, options) {
         this.pool = mysql.createPool(options.mysql);
@@ -11,8 +11,10 @@ export class Worker {
         this.list = list;
     }
 
-    async init(listName) {
-        this.log.info(`Worker '${listName}' initialization.`);
+    async run() {
+        throw new Error(`'run' method is not realized.`);
     }
 
 }
+
+module.exports = AbstractWorker;
