@@ -15,7 +15,7 @@ const {appLogger: log} = require('./logger');
 
 /*** POOL ***/
 
-const {pool} = require('./pool');
+const {pool} = require('./db');
 
 /*** SERVER ***/
 

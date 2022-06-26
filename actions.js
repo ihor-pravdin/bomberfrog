@@ -5,7 +5,7 @@ const {promisify} = require('node:util');
 
 /*** POOL ***/
 
-const {pool} = require('./pool');
+const {pool} = require('./db');
 
 /*** ERROR ***/
 

@@ -1,3 +1,5 @@
+'use strict';
+
 /*** CONFIG ***/
 
 const {mysql: config} = require('./config');
@@ -12,4 +14,4 @@ const pool = mysql.createPool(config);
 
 /*** EXPORTS ***/
 
-module.exports = {pool};
+module.exports = {mysql, pool};

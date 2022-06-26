@@ -102,6 +102,7 @@ Keeper.LIST_PROCESSING_FAILED = Symbol('LIST_PROCESSING_FAILED');
 // PROCESS_LIST
 
 Keeper.instance.on(Keeper.PROCESS_LIST, list => {
+    // todo: init worker
     Keeper.instance.createWorkers(list)
         .then(() => {
             log.info(`List '${list.name}' started.`);
