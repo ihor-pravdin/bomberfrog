@@ -98,6 +98,10 @@ const processList = async ({params: {name}}, res, next) => {
 
 const createList = async ({body: {worker, description, workers, delay}}, res) => {
     const list = await action.addList({worker, description, options: {delay, workers}});
+    log.info(`List '${list.name}' created.`, list);
+    const modulePath = `${keeper.workersDir}/${list.worker}/worker.js`;
+    await require(modulePath).init(list);
+    log.info(`Worker '${list.name}' inited.`, list);
     res.json(list);
 };
 

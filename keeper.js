@@ -68,14 +68,6 @@ class Keeper extends EventEmitter {
         return this;
     }
 
-    async initWorker(list) {
-        const {worker: type} = list;
-        const modulePath = `${this.workersDir}/${type}/worker.js`;
-        const init = require(modulePath).init;
-        await init(list);
-        return this;
-    }
-
     async createWorkers(list) {
         if (this.busy === false) {
             const {options: {delay, workers: n}} = list;

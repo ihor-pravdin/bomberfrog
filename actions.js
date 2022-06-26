@@ -112,6 +112,7 @@ const createListsTable = async () => await query(create_list_table_query);
 /*** EXPORTS ***/
 
 module.exports = {
+    query,
     getLists,
     getListByName,
     setListStatus,

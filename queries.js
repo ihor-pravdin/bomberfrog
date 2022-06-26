@@ -11,7 +11,7 @@ const update_list_status_query = 'update lists set status = ? where name = ?;';
 // language=SQL format=false
 const create_list_table_query = `
     create table if not exists lists (
-        list_id int NOT NULL AUTO_INCREMENT,
+        list_id int unsigned NOT NULL AUTO_INCREMENT,
         name varchar(128) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
         description text CHARACTER SET utf8 COLLATE utf8_general_ci,
         created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
